@@ -24,9 +24,9 @@ namespace DuplicateFileFind
         public async Task AddReference(DirectoryInfo refDirectory, bool recurse = false)
         {
 
-
-            var enumerateFiles = refDirectory.EnumerateFiles("*.*", recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly).ToList();
-            //var enumerateFiles = refDirectory.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly);
+            // switched to using "manual" recursion (see end of function)
+            //var enumerateFiles = refDirectory.EnumerateFiles("*.*", recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly).ToList();
+            var enumerateFiles = refDirectory.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).ToList();
             var extensions = new[] { ".jpg", ".jpeg", ".mp4" };
             var imageFiles = enumerateFiles.Where(fi => extensions.Contains(fi.Extension.ToLowerInvariant())).ToList();
 
