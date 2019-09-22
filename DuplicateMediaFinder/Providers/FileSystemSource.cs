@@ -6,7 +6,7 @@ using System.Security;
 using System.Threading.Tasks;
 using DuplicateMediaFinder.Interface;
 
-namespace DuplicateMediaFinder
+namespace DuplicateMediaFinder.Providers
 {
     internal class FileSystemSource : ISourceProvider
     {
