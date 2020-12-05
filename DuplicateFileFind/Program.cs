@@ -20,11 +20,15 @@ namespace DuplicateFileFind
 
             var commandArgument = args[0];
             string fileArg;
-            FileInfo fi;
             DirectoryInfo di;
             switch (commandArgument[0])
             {
-                case 'r':
+                case 'm': // reference
+
+                    break;
+
+
+                case 'r': // reference
                     if (args.Length < 2)
                     {
                         PrintUsage();
@@ -32,7 +36,6 @@ namespace DuplicateFileFind
                     }
 
                     fileArg = args[1];
-                    fi = new FileInfo(fileArg);
                     di = new DirectoryInfo(fileArg);
 
                     if (!di.Exists)
@@ -44,15 +47,15 @@ namespace DuplicateFileFind
                     break;
 
 
-                case 'l':
+                case 'l': // list
                     var directories = commandArgument.Length == 2 && commandArgument[1] == 'd';
                     await logic.List(directories);
                     break;
 
-                case 'd':
 
+                case 'd': // delete
                     fileArg = args[1];
-                    fi = new FileInfo(fileArg);
+
                     di = new DirectoryInfo(fileArg);
 
                     if (!di.Exists)
@@ -68,7 +71,10 @@ namespace DuplicateFileFind
 
         private static void PrintUsage()
         {
-            Console.WriteLine("r - add reference");
+            Console.WriteLine(@"
+r - add reference
+m - move (with adding reference)
+");
         }
     }
 }

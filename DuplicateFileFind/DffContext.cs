@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Debug;
+using Microsoft.Extensions.Logging.Console;
+//using Microsoft.Extensions.Logging.Debug;
 
-namespace DuplicateFileFind.Model
+namespace DuplicateFileFind
 {
     public class DffContext : DbContext
     {
         public static readonly LoggerFactory ConsoleLoggerFactory
-            = new LoggerFactory(new[] { new DebugLoggerProvider((_, __) => true) });
+            = new LoggerFactory(new[] {new ConsoleLoggerProvider((s, level) => true, false)});
 
         //EXPLAIN QUERY PLAN SELECT* FROM 'Files' where length = 387850
 

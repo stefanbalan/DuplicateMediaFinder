@@ -3,22 +3,20 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using DuplicateFileFind.Model;
 using Microsoft.EntityFrameworkCore;
-using Directory = DuplicateFileFind.Model.Directory;
-using File = DuplicateFileFind.Model.File;
 
 namespace DuplicateFileFind
 {
     internal class Logic
     {
-        private readonly DffContext _db = new DffContext();
-        private readonly MD5 _md5;
+        private readonly DffContext db = new DffContext();
+        private readonly MD5 md5;
+        readonly string[] extensions = { ".jpg", ".jpeg", ".mp4" };
 
         public Logic()
         {
-            _md5 = MD5.Create();
-            _db.Database.EnsureCreated();
+            md5 = MD5.Create();
+            db.Database.EnsureCreated();
         }
 
         public async Task AddReference(DirectoryInfo refDirectory, bool recurse = false)
@@ -27,7 +25,7 @@ namespace DuplicateFileFind
             // switched to using "manual" recursion (see end of function)
             //var enumerateFiles = refDirectory.EnumerateFiles("*.*", recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly).ToList();
             var enumerateFiles = refDirectory.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly).ToList();
-            var extensions = new[] { ".jpg", ".jpeg", ".mp4" };
+            
             var imageFiles = enumerateFiles.Where(fi => extensions.Contains(fi.Extension.ToLowerInvariant())).ToList();
 
             var a = enumerateFiles.Count;
@@ -39,15 +37,15 @@ namespace DuplicateFileFind
             {
                 try
                 {
-                    var directory = await _db.Directories.FirstOrDefaultAsync(dir => dir.Path == fileInfo.DirectoryName);
+                    var directory = await db.Directories.FirstOrDefaultAsync(dir => dir.Path == fileInfo.DirectoryName);
                     if (directory is null)
                     {
                         directory = new Directory { Path = fileInfo.DirectoryName };
-                        await _db.Directories.AddAsync(directory);
-                        await _db.SaveChangesAsync();
+                        await db.Directories.AddAsync(directory);
+                        await db.SaveChangesAsync();
                     }
 
-                    var file = _db.Files.FirstOrDefault(f => f.DirectoryId == directory.Id && f.Name == fileInfo.Name && f.Length == fileInfo.Length);
+                    var file = db.Files.FirstOrDefault(f => f.DirectoryId == directory.Id && f.Name == fileInfo.Name && f.Length == fileInfo.Length);
                     if (!(file is null))
                     {
                         //Console.WriteLine($"{fileInfo.FullName} already indexed");
@@ -64,14 +62,14 @@ namespace DuplicateFileFind
                         Directory = directory,
                         CreationTime = fileInfo.CreationTime,
                         Length = fileInfo.Length,
-                        Hash = hashString,
+                        Hash = hashString
                     };
 
-                    _db.Files.Add(file);
+                    db.Files.Add(file);
                     if (unsaved++ >= 100)
                     {
                         unsaved = 0;
-                        await _db.SaveChangesAsync();
+                        await db.SaveChangesAsync();
                     }
                     Console.WriteLine($"{fileInfo.FullName}, {fileInfo.Length}, " + $"{fileInfo.CreationTime}, {hashString}");
                 }
@@ -81,7 +79,7 @@ namespace DuplicateFileFind
                 }
             }
 
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
 
             if (!recurse) return;
 
@@ -92,12 +90,17 @@ namespace DuplicateFileFind
             }
         }
 
+        public async Task PersistFileData(FileInfo fi)
+        {
+
+        }
+
         private string Hash_MD5_String(FileInfo fileInfo)
         {
             byte[] hash;
             using (var stream = fileInfo.OpenRead())
             {
-                hash = _md5.ComputeHash(stream);
+                hash = md5.ComputeHash(stream);
             }
 
             var hashString = hash.Aggregate("", (s, b) => s + b.ToString("X2"));
@@ -106,7 +109,7 @@ namespace DuplicateFileFind
 
         public async Task List(bool directories)
         {
-            var dirs = await _db.Directories.ToListAsync();
+            var dirs = await db.Directories.ToListAsync();
             foreach (var di in dirs)
             {
                 Console.WriteLine(di.Path);
@@ -116,12 +119,11 @@ namespace DuplicateFileFind
         public async Task Delete(DirectoryInfo delDirectory, bool recurse)
         {
             var enumerateFiles = delDirectory.EnumerateFiles("*.*", recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
-            var extensions = new[] { ".jpg", ".jpeg", ".mp4" };
             var imageFiles = enumerateFiles.Where(fi => extensions.Contains(fi.Extension));
 
             foreach (var deleteFile in imageFiles)
             {
-                var sameSeizeFiles = await _db.Files.Where(f => f.Length == deleteFile.Length).ToListAsync();
+                var sameSeizeFiles = await db.Files.Where(f => f.Length == deleteFile.Length).ToListAsync();
                 if (sameSeizeFiles.Count == 0) continue;
 
                 var hash = Hash_MD5_String(deleteFile);
